@@ -1,0 +1,68 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: northstar
+  profiles:
+    active: mysql
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Shanghai
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 8MB
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/schema.sql
+      continue-on-error: true
+      encoding: UTF-8
+
+# 前后端分离：Token 只走 Header，不写 Cookie
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 1800
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  is-log: false
+  is-read-header: true
+  is-read-cookie: false
+  is-read-body: false
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+northstar:
+  cors:
+    origins:
+      - http://localhost:8081
+      - http://127.0.0.1:8081
+      - http://localhost:8082
+      - http://127.0.0.1:8082
+  security:
+    max-login-failures: 5
+    lock-minutes: 15
+    captcha-after-failures: 3
+    password-min-length: 8
+    password-max-length: 32
+    password-history: 3
+    refresh-ttl-days: 7
+  storage:
+    dir: ./data/uploads
+
+logging:
+  level:
+    com.nomp.northstar: INFO
+    com.nomp.northstar.modules: debug

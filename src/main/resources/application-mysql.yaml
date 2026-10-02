@@ -1,0 +1,10 @@
+# 本地默认已切到 mysql。账号 root / root
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/northstar?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
