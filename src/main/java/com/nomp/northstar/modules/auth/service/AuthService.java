@@ -5,6 +5,7 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.nomp.northstar.common.constant.ErrorCode;
 import com.nomp.northstar.common.exception.BizException;
 import com.nomp.northstar.common.security.LoginHelper;
 import com.nomp.northstar.common.security.LoginUser;
@@ -110,11 +111,11 @@ public class AuthService {
     }
     if ("frozen".equals(user.getStatus())) {
       writeLoginLog(user, dto.getUsername(), false, "账号已停用");
-      throw BizException.unauthorized("账号已停用");
+      throw BizException.forbidden("账号已停用");
     }
     if ("pending".equals(user.getStatus())) {
       writeLoginLog(user, dto.getUsername(), false, "账号待审核");
-      throw BizException.unauthorized("账号待审核，暂不能登录");
+      throw BizException.forbidden("账号待审核，暂不能登录");
     }
     user.setLoginFailCount(0);
     user.setLockedUntil(null);
@@ -324,10 +325,10 @@ public class AuthService {
   private BizException failLogin(SysUser user, String message, boolean captchaRequired) {
     if (captchaRequired) {
       CaptchaVO captcha = captcha(true);
-      return new BizException(40001, org.springframework.http.HttpStatus.UNAUTHORIZED, message,
+      return new BizException(ErrorCode.BAD_REQUEST, org.springframework.http.HttpStatus.BAD_REQUEST, message,
           Map.of("captchaRequired", true, "captchaId", captcha.getCaptchaId(), "question", captcha.getQuestion()));
     }
-    return BizException.unauthorized(message);
+    return BizException.badRequest(message);
   }
 
   private void writeLoginLog(SysUser user, String username, boolean success, String reason) {

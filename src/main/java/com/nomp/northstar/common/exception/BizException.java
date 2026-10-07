@@ -18,12 +18,20 @@ public class BizException extends RuntimeException {
     this.data = data;
   }
 
+  public static BizException badRequest(String message) {
+    return new BizException(ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST, message, null);
+  }
+
   public static BizException unauthorized(String message) {
     return new BizException(ErrorCode.UNAUTHORIZED, HttpStatus.UNAUTHORIZED, message, null);
   }
 
   public static BizException forbidden() {
-    return new BizException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN, "没有权限执行该操作", null);
+    return forbidden("没有权限执行该操作");
+  }
+
+  public static BizException forbidden(String message) {
+    return new BizException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN, message, null);
   }
 
   public static BizException notFound(String message) {
