@@ -3,9 +3,11 @@ package com.nomp.northstar.modules.system.service;
 import com.nomp.northstar.common.core.PageResult;
 import com.nomp.northstar.modules.system.model.dto.SysUserSaveDTO;
 import com.nomp.northstar.modules.system.model.query.SysUserQuery;
+import com.nomp.northstar.modules.system.model.vo.ImportResultVO;
 import com.nomp.northstar.modules.system.model.vo.SysUserVO;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ISysUserService {
   PageResult<SysUserVO> page(SysUserQuery query);
@@ -27,4 +29,10 @@ public interface ISysUserService {
   void grantRoles(Long id, List<Long> roleIds);
 
   Map<String, Long> stats();
+
+  void export(SysUserQuery query, jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException;
+
+  void downloadTemplate(jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException;
+
+  ImportResultVO importUsers(MultipartFile file) throws java.io.IOException;
 }

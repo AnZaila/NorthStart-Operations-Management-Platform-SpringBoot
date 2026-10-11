@@ -209,10 +209,27 @@ CREATE TABLE IF NOT EXISTS sys_notice (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
   title VARCHAR(128) NOT NULL,
-  content VARCHAR(512),
+  content TEXT,
   type VARCHAR(32),
   read_flag TINYINT NOT NULL DEFAULT 0,
   create_time DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS sys_announcement (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(128) NOT NULL,
+  content TEXT,
+  type VARCHAR(32) NOT NULL DEFAULT 'system',
+  status VARCHAR(16) NOT NULL DEFAULT 'draft',
+  publisher_id BIGINT,
+  publisher_name VARCHAR(64),
+  publish_time DATETIME,
+  recipient_count INT NOT NULL DEFAULT 0,
+  create_time DATETIME,
+  update_time DATETIME,
+  create_by BIGINT,
+  update_by BIGINT,
+  deleted TINYINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS sys_file (

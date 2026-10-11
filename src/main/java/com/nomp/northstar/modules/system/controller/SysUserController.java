@@ -7,9 +7,12 @@ import com.nomp.northstar.common.core.PageResult;
 import com.nomp.northstar.common.core.R;
 import com.nomp.northstar.modules.system.model.dto.SysUserSaveDTO;
 import com.nomp.northstar.modules.system.model.query.SysUserQuery;
+import com.nomp.northstar.modules.system.model.vo.ImportResultVO;
 import com.nomp.northstar.modules.system.model.vo.SysUserVO;
 import com.nomp.northstar.modules.system.service.ISysUserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
@@ -22,7 +25,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/system/users")
@@ -34,6 +39,26 @@ public class SysUserController {
   @SaCheckPermission(Perms.USER_VIEW)
   public R<PageResult<SysUserVO>> page(SysUserQuery query) {
     return R.ok(userService.page(query));
+  }
+
+  @GetMapping("/export")
+  @SaCheckPermission(Perms.USER_EXPORT)
+  @OperLog(module = "用户", action = "导出", resource = "user")
+  public void export(SysUserQuery query, HttpServletResponse response) throws IOException {
+    userService.export(query, response);
+  }
+
+  @GetMapping("/import-template")
+  @SaCheckPermission(Perms.USER_IMPORT)
+  public void importTemplate(HttpServletResponse response) throws IOException {
+    userService.downloadTemplate(response);
+  }
+
+  @PostMapping("/import")
+  @SaCheckPermission(Perms.USER_IMPORT)
+  @OperLog(module = "用户", action = "导入", resource = "user")
+  public R<ImportResultVO> importUsers(@RequestPart("file") MultipartFile file) throws IOException {
+    return R.ok(userService.importUsers(file));
   }
 
   @GetMapping("/{id}")

@@ -38,7 +38,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         .allowedOriginPatterns(origins.toArray(String[]::new))
         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         .allowedHeaders("*")
-        .exposedHeaders("X-Request-Id")
+        .exposedHeaders("X-Request-Id", "Content-Disposition")
         .allowCredentials(true);
   }
 }

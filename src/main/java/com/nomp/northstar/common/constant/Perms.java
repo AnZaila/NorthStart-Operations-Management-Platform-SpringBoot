@@ -10,6 +10,8 @@ public final class Perms {
   public static final String USER_UNLOCK = "system:user:unlock";
   public static final String USER_RESET = "system:user:reset-password";
   public static final String USER_GRANT = "system:user:grant";
+  public static final String USER_EXPORT = "system:user:export";
+  public static final String USER_IMPORT = "system:user:import";
   public static final String USER_SENSITIVE = "system:user:sensitive";
   public static final String ROLE_VIEW = "system:role:view";
   public static final String ROLE_CREATE = "system:role:create";
@@ -45,6 +47,11 @@ public final class Perms {
   public static final String FILE_VIEW = "system:file:view";
   public static final String FILE_DOWNLOAD = "system:file:download";
   public static final String FILE_DELETE = "system:file:delete";
+  public static final String NOTICE_VIEW = "ops:notice:view";
+  public static final String NOTICE_CREATE = "ops:notice:create";
+  public static final String NOTICE_PUBLISH = "ops:notice:publish";
+  public static final String NOTICE_DELETE = "ops:notice:delete";
+  public static final String MONITOR_SERVER = "monitor:server:view";
   public static final String LAB_VUE3 = "lab:vue3:view";
 
   private Perms() {}

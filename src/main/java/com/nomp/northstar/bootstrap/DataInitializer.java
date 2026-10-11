@@ -30,6 +30,7 @@ import com.nomp.northstar.modules.system.mapper.SysUserRoleMapper;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,7 @@ public class DataInitializer implements CommandLineRunner {
   private final SysDictDataMapper dictDataMapper;
   private final SysConfigMapper configMapper;
   private final SysNoticeMapper noticeMapper;
+  private final DataSource dataSource;
 
   @Override
   @Transactional
@@ -81,7 +83,8 @@ public class DataInitializer implements CommandLineRunner {
       Long memberRole = role("member", "普通成员", "工作台与个人中心", 1, "SELF", 5);
 
       grant(superRole, permIds.keySet().stream().map(permIds::get).toList());
-      grant(opsRole, codes(permIds, Perms.DASHBOARD_VIEW, Perms.USER_VIEW, Perms.DEPT_VIEW, Perms.POST_VIEW, Perms.DICT_VIEW, Perms.AUDIT_LOGIN));
+      grant(opsRole, codes(permIds, Perms.DASHBOARD_VIEW, Perms.USER_VIEW, Perms.DEPT_VIEW, Perms.POST_VIEW, Perms.DICT_VIEW, Perms.AUDIT_LOGIN,
+          Perms.NOTICE_VIEW, Perms.NOTICE_CREATE, Perms.NOTICE_PUBLISH));
       grant(deptRole, codes(permIds, Perms.DASHBOARD_VIEW, Perms.USER_VIEW, Perms.USER_CREATE, Perms.USER_UPDATE, Perms.USER_DISABLE,
           Perms.DEPT_VIEW, Perms.POST_VIEW, Perms.POST_CREATE, Perms.POST_UPDATE, Perms.DICT_VIEW));
       grant(reviewerRole, codes(permIds, Perms.DASHBOARD_VIEW, Perms.USER_VIEW, Perms.AUDIT_LOGIN));
@@ -117,6 +120,8 @@ public class DataInitializer implements CommandLineRunner {
         arr(Perms.USER_UNLOCK, "解锁用户", "BUTTON"),
         arr(Perms.USER_RESET, "重置密码", "BUTTON"),
         arr(Perms.USER_GRANT, "分配角色", "BUTTON"),
+        arr(Perms.USER_EXPORT, "导出用户", "BUTTON"),
+        arr(Perms.USER_IMPORT, "导入用户", "BUTTON"),
         arr(Perms.USER_SENSITIVE, "查看敏感信息", "API"),
         arr(Perms.ROLE_VIEW, "角色查看", "MENU"),
         arr(Perms.ROLE_CREATE, "新建角色", "BUTTON"),
@@ -152,6 +157,11 @@ public class DataInitializer implements CommandLineRunner {
         arr(Perms.FILE_VIEW, "文件查看", "MENU"),
         arr(Perms.FILE_DOWNLOAD, "文件下载", "BUTTON"),
         arr(Perms.FILE_DELETE, "文件删除", "BUTTON"),
+        arr(Perms.NOTICE_VIEW, "公告查看", "MENU"),
+        arr(Perms.NOTICE_CREATE, "新建公告", "BUTTON"),
+        arr(Perms.NOTICE_PUBLISH, "发布公告", "BUTTON"),
+        arr(Perms.NOTICE_DELETE, "删除公告", "BUTTON"),
+        arr(Perms.MONITOR_SERVER, "服务监控", "MENU"),
         arr(Perms.LAB_VUE3, "平台实验室", "MENU"));
     java.util.HashMap<String, Long> ids = new java.util.HashMap<>();
     for (String[] row : rows) {
@@ -176,6 +186,8 @@ public class DataInitializer implements CommandLineRunner {
     button(user, "解锁用户", Perms.USER_UNLOCK, 5);
     button(user, "重置密码", Perms.USER_RESET, 6);
     button(user, "分配角色", Perms.USER_GRANT, 7);
+    button(user, "导出用户", Perms.USER_EXPORT, 8);
+    button(user, "导入用户", Perms.USER_IMPORT, 9);
     Long role = menu(system, "MENU", "角色管理", "/system/role", "system/RoleHome", "UserFilled", Perms.ROLE_VIEW, 1, 0, 2);
     button(role, "新建角色", Perms.ROLE_CREATE, 1);
     button(role, "编辑角色", Perms.ROLE_UPDATE, 2);
@@ -190,6 +202,10 @@ public class DataInitializer implements CommandLineRunner {
     menu(system, "MENU", "参数配置", "/system/config", "system/ConfigHome", "Tools", Perms.CONFIG_VIEW, 1, 0, 6);
     Long file = menu(system, "MENU", "文件中心", "/system/file", "system/FileHome", "Paperclip", Perms.FILE_VIEW, 1, 0, 7);
     button(file, "删除文件", Perms.FILE_DELETE, 1);
+    Long notice = menu(system, "MENU", "通知公告", "/system/notice", "system/NoticeHome", "Bell", Perms.NOTICE_VIEW, 1, 0, 8);
+    button(notice, "新建公告", Perms.NOTICE_CREATE, 1);
+    button(notice, "发布公告", Perms.NOTICE_PUBLISH, 2);
+    button(notice, "删除公告", Perms.NOTICE_DELETE, 3);
     Long org = menu(0L, "DIR", "组织管理", "/organization", null, "OfficeBuilding", null, 1, 0, 3);
     Long dept = menu(org, "MENU", "部门管理", "/organization/department", "organization/DepartmentHome", "Connection", Perms.DEPT_VIEW, 1, 0, 1);
     button(dept, "新建部门", Perms.DEPT_CREATE, 1);
@@ -204,6 +220,8 @@ public class DataInitializer implements CommandLineRunner {
     menu(audit, "MENU", "登录日志", "/audit/login", "audit/LoginLogHome", "Document", Perms.AUDIT_LOGIN, 1, 0, 1);
     menu(audit, "MENU", "操作日志", "/audit/operate", "audit/OperateLogHome", "Tickets", Perms.AUDIT_OPERATE, 1, 0, 2);
     menu(audit, "MENU", "在线用户", "/audit/online", "audit/OnlineUserHome", "Monitor", Perms.AUDIT_ONLINE, 1, 0, 3);
+    Long monitor = menu(0L, "DIR", "系统监控", "/monitor", null, "Odometer", null, 1, 0, 5);
+    menu(monitor, "MENU", "服务监控", "/monitor/server", "monitor/ServerHome", "Cpu", Perms.MONITOR_SERVER, 1, 0, 1);
     menu(0L, "MENU", "个人中心", "/profile", "profile/ProfileHome", "User", null, 0, 1, 90);
     menu(0L, "MENU", "平台实验室", "/lab/vue3-learning", "learning/Vue3Learning", "Cpu", Perms.LAB_VUE3, 1, 0, 99);
   }
@@ -321,10 +339,21 @@ public class DataInitializer implements CommandLineRunner {
   }
 
   private void ensureExtras() {
+    patchNoticeContent();
     ensurePermission(Perms.AUDIT_ONLINE, "在线用户", "MENU");
     ensurePermission(Perms.FILE_VIEW, "文件查看", "MENU");
     ensurePermission(Perms.FILE_DOWNLOAD, "文件下载", "BUTTON");
     ensurePermission(Perms.FILE_DELETE, "文件删除", "BUTTON");
+    ensurePermission(Perms.USER_EXPORT, "导出用户", "BUTTON");
+    ensurePermission(Perms.USER_IMPORT, "导入用户", "BUTTON");
+    ensurePermission(Perms.NOTICE_VIEW, "公告查看", "MENU");
+    ensurePermission(Perms.NOTICE_CREATE, "新建公告", "BUTTON");
+    ensurePermission(Perms.NOTICE_PUBLISH, "发布公告", "BUTTON");
+    ensurePermission(Perms.NOTICE_DELETE, "删除公告", "BUTTON");
+    ensurePermission(Perms.MONITOR_SERVER, "服务监控", "MENU");
+    grantRolePerm("super_admin", Perms.USER_EXPORT, Perms.USER_IMPORT, Perms.NOTICE_VIEW, Perms.NOTICE_CREATE,
+        Perms.NOTICE_PUBLISH, Perms.NOTICE_DELETE, Perms.MONITOR_SERVER, Perms.FILE_VIEW, Perms.FILE_DELETE, Perms.AUDIT_ONLINE);
+    grantRolePerm("ops_manager", Perms.NOTICE_VIEW, Perms.NOTICE_CREATE, Perms.NOTICE_PUBLISH);
     Long systemId = findMenuId("/system", "DIR");
     Long auditId = findMenuId("/audit", "DIR");
     if (systemId != null) {
@@ -332,10 +361,56 @@ public class DataInitializer implements CommandLineRunner {
       if (fileId != null) {
         ensureButton(fileId, "删除文件", Perms.FILE_DELETE, 1);
       }
+      Long userId = findMenuId("/system/user", "MENU");
+      if (userId != null) {
+        ensureButton(userId, "导出用户", Perms.USER_EXPORT, 8);
+        ensureButton(userId, "导入用户", Perms.USER_IMPORT, 9);
+      }
+      Long noticeId = ensureMenu(systemId, "MENU", "通知公告", "/system/notice", "system/NoticeHome", "Bell", Perms.NOTICE_VIEW, 1, 0, 8);
+      if (noticeId != null) {
+        ensureButton(noticeId, "新建公告", Perms.NOTICE_CREATE, 1);
+        ensureButton(noticeId, "发布公告", Perms.NOTICE_PUBLISH, 2);
+        ensureButton(noticeId, "删除公告", Perms.NOTICE_DELETE, 3);
+      }
     }
     if (auditId != null) {
       ensureMenu(auditId, "MENU", "在线用户", "/audit/online", "audit/OnlineUserHome", "Monitor", Perms.AUDIT_ONLINE, 1, 0, 3);
     }
+    Long monitorId = ensureDir("/monitor", "系统监控", "Odometer", 5);
+    if (monitorId != null) {
+      ensureMenu(monitorId, "MENU", "服务监控", "/monitor/server", "monitor/ServerHome", "Cpu", Perms.MONITOR_SERVER, 1, 0, 1);
+    }
+  }
+
+  private void grantRolePerm(String roleCode, String... permCodes) {
+    SysRole role = roleMapper.selectOne(Wrappers.<SysRole>lambdaQuery().eq(SysRole::getCode, roleCode).last("limit 1"));
+    if (role == null) {
+      return;
+    }
+    for (String code : permCodes) {
+      SysPermission permission = permissionMapper.selectOne(Wrappers.<SysPermission>lambdaQuery().eq(SysPermission::getCode, code).last("limit 1"));
+      if (permission == null) {
+        continue;
+      }
+      Long count = rolePermissionMapper.selectCount(Wrappers.<SysRolePermission>lambdaQuery()
+          .eq(SysRolePermission::getRoleId, role.getId())
+          .eq(SysRolePermission::getPermissionId, permission.getId()));
+      if (count != null && count > 0) {
+        continue;
+      }
+      SysRolePermission rel = new SysRolePermission();
+      rel.setRoleId(role.getId());
+      rel.setPermissionId(permission.getId());
+      rolePermissionMapper.insert(rel);
+    }
+  }
+
+  private Long ensureDir(String path, String name, String icon, int sort) {
+    SysMenu exists = menuMapper.selectOne(Wrappers.<SysMenu>lambdaQuery().eq(SysMenu::getPath, path).eq(SysMenu::getType, "DIR").last("limit 1"));
+    if (exists != null) {
+      return exists.getId();
+    }
+    return menu(0L, "DIR", name, path, null, icon, null, 1, 0, sort);
   }
 
   private void ensurePermission(String code, String name, String type) {
@@ -348,6 +423,15 @@ public class DataInitializer implements CommandLineRunner {
     permission.setName(name);
     permission.setType(type);
     permissionMapper.insert(permission);
+  }
+
+  private void patchNoticeContent() {
+    try (var conn = dataSource.getConnection(); var st = conn.createStatement()) {
+      st.execute("ALTER TABLE sys_notice MODIFY COLUMN content TEXT");
+      st.execute("ALTER TABLE sys_announcement MODIFY COLUMN content TEXT");
+    } catch (Exception ex) {
+      log.debug("通知正文扩容跳过: {}", ex.getMessage());
+    }
   }
 
   private Long findMenuId(String path, String type) {
