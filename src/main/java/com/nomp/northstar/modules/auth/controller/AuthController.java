@@ -9,9 +9,11 @@ import com.nomp.northstar.modules.auth.model.MenuVO;
 import com.nomp.northstar.modules.auth.model.ProfileUpdateDTO;
 import com.nomp.northstar.modules.auth.model.ProfileVO;
 import com.nomp.northstar.modules.auth.model.RefreshDTO;
+import com.nomp.northstar.modules.auth.model.SecurityPolicyVO;
 import com.nomp.northstar.modules.auth.model.SessionVO;
 import com.nomp.northstar.modules.auth.model.TokenVO;
 import com.nomp.northstar.modules.auth.service.AuthService;
+import com.nomp.northstar.modules.system.service.SysConfigService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +30,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
   private final AuthService authService;
+  private final SysConfigService configService;
 
   @GetMapping("/captcha")
   public R<CaptchaVO> captcha() {
     return R.ok(authService.captcha(false));
+  }
+
+  @GetMapping("/policy")
+  public R<SecurityPolicyVO> policy() {
+    return R.ok(configService.policy());
   }
 
   @PostMapping("/login")

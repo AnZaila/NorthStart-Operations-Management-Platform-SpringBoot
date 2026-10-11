@@ -1,6 +1,7 @@
 package com.nomp.northstar.bootstrap;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.nomp.northstar.common.constant.ConfigKeys;
 import com.nomp.northstar.common.constant.Perms;
 import com.nomp.northstar.common.utils.PasswordUtils;
 import com.nomp.northstar.modules.notify.domain.SysNotice;
@@ -27,6 +28,7 @@ import com.nomp.northstar.modules.system.mapper.SysRoleMapper;
 import com.nomp.northstar.modules.system.mapper.SysRolePermissionMapper;
 import com.nomp.northstar.modules.system.mapper.SysUserMapper;
 import com.nomp.northstar.modules.system.mapper.SysUserRoleMapper;
+import com.nomp.northstar.modules.system.service.SysConfigService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,7 @@ public class DataInitializer implements CommandLineRunner {
   private final SysDictDataMapper dictDataMapper;
   private final SysConfigMapper configMapper;
   private final SysNoticeMapper noticeMapper;
+  private final SysConfigService configService;
   private final DataSource dataSource;
 
   @Override
@@ -107,6 +110,7 @@ public class DataInitializer implements CommandLineRunner {
       log.info("种子账号: admin / Admin@123456 ；member / Member@123456");
     }
     ensureExtras();
+    configService.reload();
   }
 
   private Map<String, Long> seedPermissions() {
@@ -242,11 +246,13 @@ public class DataInitializer implements CommandLineRunner {
   }
 
   private void seedConfigs() {
-    config("password.min-length", "8", "密码最小长度");
-    config("password.max-length", "32", "密码最大长度");
-    config("login.max-failures", "5", "登录失败锁定阈值");
-    config("login.lock-minutes", "15", "锁定时长（分钟）");
-    config("login.captcha-after", "3", "失败几次后出现验证码");
+    config(ConfigKeys.PASSWORD_MIN_LENGTH, "8", "密码最小长度");
+    config(ConfigKeys.PASSWORD_MAX_LENGTH, "32", "密码最大长度");
+    config(ConfigKeys.PASSWORD_HISTORY, "3", "新密码不能与最近几次重复");
+    config(ConfigKeys.LOGIN_MAX_FAILURES, "5", "登录失败锁定阈值");
+    config(ConfigKeys.LOGIN_LOCK_MINUTES, "15", "锁定时长（分钟）");
+    config(ConfigKeys.LOGIN_CAPTCHA_AFTER, "3", "失败几次后出现验证码");
+    config(ConfigKeys.LOGIN_REFRESH_TTL_DAYS, "7", "刷新令牌有效天数");
   }
 
   private Long menu(Long parentId, String type, String name, String path, String component, String icon, String perm, int visible, int hidden, int sort) {
@@ -340,6 +346,13 @@ public class DataInitializer implements CommandLineRunner {
 
   private void ensureExtras() {
     patchNoticeContent();
+    ensureConfig(ConfigKeys.PASSWORD_MIN_LENGTH, "8", "密码最小长度");
+    ensureConfig(ConfigKeys.PASSWORD_MAX_LENGTH, "32", "密码最大长度");
+    ensureConfig(ConfigKeys.PASSWORD_HISTORY, "3", "新密码不能与最近几次重复");
+    ensureConfig(ConfigKeys.LOGIN_MAX_FAILURES, "5", "登录失败锁定阈值");
+    ensureConfig(ConfigKeys.LOGIN_LOCK_MINUTES, "15", "锁定时长（分钟）");
+    ensureConfig(ConfigKeys.LOGIN_CAPTCHA_AFTER, "3", "失败几次后出现验证码");
+    ensureConfig(ConfigKeys.LOGIN_REFRESH_TTL_DAYS, "7", "刷新令牌有效天数");
     ensurePermission(Perms.AUDIT_ONLINE, "在线用户", "MENU");
     ensurePermission(Perms.FILE_VIEW, "文件查看", "MENU");
     ensurePermission(Perms.FILE_DOWNLOAD, "文件下载", "BUTTON");
@@ -494,6 +507,14 @@ public class DataInitializer implements CommandLineRunner {
     data.setSortNo(sort);
     data.setStatus("active");
     dictDataMapper.insert(data);
+  }
+
+  private void ensureConfig(String key, String value, String remark) {
+    Long count = configMapper.selectCount(Wrappers.<SysConfig>lambdaQuery().eq(SysConfig::getConfigKey, key));
+    if (count != null && count > 0) {
+      return;
+    }
+    config(key, value, remark);
   }
 
   private void config(String key, String value, String remark) {

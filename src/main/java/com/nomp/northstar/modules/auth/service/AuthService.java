@@ -11,7 +11,6 @@ import com.nomp.northstar.common.security.LoginHelper;
 import com.nomp.northstar.common.security.LoginUser;
 import com.nomp.northstar.common.utils.PasswordUtils;
 import com.nomp.northstar.common.utils.ServletUtils;
-import com.nomp.northstar.config.NorthstarProperties;
 import com.nomp.northstar.modules.auth.model.CaptchaVO;
 import com.nomp.northstar.modules.auth.model.ChangePasswordDTO;
 import com.nomp.northstar.modules.auth.model.LoginDTO;
@@ -38,6 +37,7 @@ import com.nomp.northstar.modules.system.mapper.SysRefreshTokenMapper;
 import com.nomp.northstar.modules.system.mapper.SysRoleMapper;
 import com.nomp.northstar.modules.system.mapper.SysUserMapper;
 import com.nomp.northstar.modules.system.mapper.SysUserRoleMapper;
+import com.nomp.northstar.modules.system.service.SysConfigService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -63,7 +63,7 @@ public class AuthService {
   private final SysPasswordHistoryMapper passwordHistoryMapper;
   private final SysLoginLogMapper loginLogMapper;
   private final LoginUserAssembler assembler;
-  private final NorthstarProperties properties;
+  private final SysConfigService configService;
 
   private record Captcha(String answer, LocalDateTime expireAt) {}
 
@@ -80,34 +80,36 @@ public class AuthService {
     return vo;
   }
 
-  @Transactional
+  @Transactional(noRollbackFor = BizException.class)
   public TokenVO login(LoginDTO dto) {
     SysUser user = userMapper.selectOne(Wrappers.<SysUser>lambdaQuery()
         .eq(SysUser::getUsername, dto.getUsername())
         .or()
         .eq(SysUser::getEmail, dto.getUsername()));
-    var sec = properties.getSecurity();
-    if (user != null && user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
+    if (user == null) {
+      writeLoginLog(null, dto.getUsername(), false, "用户不存在");
+      throw BizException.badRequest("账号不存在");
+    }
+    int captchaAfter = configService.captchaAfterFailures();
+    int maxFailures = configService.maxLoginFailures();
+    int lockMinutes = configService.lockMinutes();
+    int userFails = user.getLoginFailCount() == null ? 0 : user.getLoginFailCount();
+    if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
       writeLoginLog(user, dto.getUsername(), false, "账号已锁定");
       throw BizException.conflict("账号已锁定，请稍后重试或联系管理员");
     }
-    boolean needCaptcha = user != null && user.getLoginFailCount() != null && user.getLoginFailCount() >= sec.getCaptchaAfterFailures();
-    if (needCaptcha) {
+    if (userFails >= captchaAfter) {
       verifyCaptcha(dto);
     }
-    if (user == null) {
-      writeLoginLog(null, dto.getUsername(), false, "用户不存在");
-      throw failLogin(null, "用户名或密码错误", needCaptcha);
-    }
     if (!PasswordUtils.matches(dto.getPassword(), user.getPassword())) {
-      int fails = (user.getLoginFailCount() == null ? 0 : user.getLoginFailCount()) + 1;
+      int fails = userFails + 1;
       user.setLoginFailCount(fails);
-      if (fails >= sec.getMaxLoginFailures()) {
-        user.setLockedUntil(LocalDateTime.now().plusMinutes(sec.getLockMinutes()));
+      if (fails >= maxFailures) {
+        user.setLockedUntil(LocalDateTime.now().plusMinutes(lockMinutes));
       }
       userMapper.updateById(user);
       writeLoginLog(user, dto.getUsername(), false, "密码错误");
-      throw failLogin(user, "用户名或密码错误", fails >= sec.getCaptchaAfterFailures());
+      throw failLogin(user, "用户名或密码错误", fails >= captchaAfter);
     }
     if ("frozen".equals(user.getStatus())) {
       writeLoginLog(user, dto.getUsername(), false, "账号已停用");
@@ -249,8 +251,7 @@ public class AuthService {
   }
 
   public void persistNewPassword(SysUser user, String raw) {
-    var sec = properties.getSecurity();
-    String invalid = PasswordUtils.validate(raw, sec.getPasswordMinLength(), sec.getPasswordMaxLength());
+    String invalid = PasswordUtils.validate(raw, configService.passwordMinLength(), configService.passwordMaxLength());
     if (invalid != null) {
       throw BizException.validation(invalid, Map.of("newPassword", invalid));
     }
@@ -261,7 +262,7 @@ public class AuthService {
         Wrappers.<SysPasswordHistory>lambdaQuery()
             .eq(SysPasswordHistory::getUserId, user.getId())
             .orderByDesc(SysPasswordHistory::getCreateTime)
-            .last("limit " + sec.getPasswordHistory()));
+            .last("limit " + configService.passwordHistory()));
     for (SysPasswordHistory history : histories) {
       if (PasswordUtils.matches(raw, history.getPassword())) {
         throw BizException.validation("新密码不能与最近使用过的密码重复", Map.of("newPassword", "新密码不能与最近使用过的密码重复"));
@@ -293,7 +294,7 @@ public class AuthService {
     SysRefreshToken refresh = new SysRefreshToken();
     refresh.setUserId(user.getId());
     refresh.setToken(IdUtil.fastSimpleUUID());
-    refresh.setExpireTime(LocalDateTime.now().plusDays(properties.getSecurity().getRefreshTtlDays()));
+    refresh.setExpireTime(LocalDateTime.now().plusDays(configService.refreshTtlDays()));
     refresh.setRevoked(0);
     refresh.setUserAgent(ServletUtils.userAgent());
     refresh.setIp(ServletUtils.ip());

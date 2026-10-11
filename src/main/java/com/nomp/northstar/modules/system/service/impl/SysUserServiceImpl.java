@@ -10,7 +10,6 @@ import com.nomp.northstar.common.security.LoginHelper;
 import com.nomp.northstar.common.security.LoginUser;
 import com.nomp.northstar.common.utils.PasswordUtils;
 import com.nomp.northstar.common.core.PageResult;
-import com.nomp.northstar.config.NorthstarProperties;
 import com.nomp.northstar.modules.auth.service.AuthService;
 import com.nomp.northstar.modules.org.domain.SysDept;
 import com.nomp.northstar.modules.org.domain.SysPost;
@@ -28,6 +27,7 @@ import com.nomp.northstar.common.utils.ExcelWeb;
 import com.nomp.northstar.modules.system.model.vo.ImportResultVO;
 import com.nomp.northstar.modules.system.model.vo.SysUserVO;
 import com.nomp.northstar.modules.system.service.ISysUserService;
+import com.nomp.northstar.modules.system.service.SysConfigService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -52,7 +52,7 @@ public class SysUserServiceImpl implements ISysUserService {
   private final SysDeptMapper deptMapper;
   private final SysPostMapper postMapper;
   private final AuthService authService;
-  private final NorthstarProperties properties;
+  private final SysConfigService configService;
 
   @Override
   public PageResult<SysUserVO> page(SysUserQuery query) {
@@ -79,7 +79,7 @@ public class SysUserServiceImpl implements ISysUserService {
     SysUser user = new SysUser();
     fill(user, dto);
     String raw = StrUtil.blankToDefault(dto.getPassword(), "User@123456");
-    String invalid = PasswordUtils.validate(raw, properties.getSecurity().getPasswordMinLength(), properties.getSecurity().getPasswordMaxLength());
+    String invalid = PasswordUtils.validate(raw, configService.passwordMinLength(), configService.passwordMaxLength());
     if (invalid != null) {
       throw BizException.validation(invalid);
     }
